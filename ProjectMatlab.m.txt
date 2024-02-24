@@ -1,0 +1,156 @@
+% University Of Sharjah
+%Department of Electrical and Computer Engineering
+%Engineering Computation and Linear Algebra 
+
+%Done By:
+%Amr Ahmed  U20103240  section 13 
+%Saad mahfood U20101891 section 13
+%Mostafa Hassan U20103047 section 12
+%Hazem Mohammad U21100667 section 13
+
+
+clear all 
+clc
+                                            %% Input For Resistance %%
+R = input('Enter values of the resistances in ohm, [R1...Rn]=');%prompting the user to enter values of Resistors
+while(length(R)<3 | any(~isreal(R)) | any(R<=0)  )%using loops to check the conditions, same for the rest of values
+disp(' The minimum number of resistors is 3, values should be positive, non-zero, and real');%displaying the conditions so the user would know what to enter
+R = input('re-Enter values of the resistances in ohm, [R1...Rn]= ');% asking the user to reneter the values if any condition is not satisfied 
+end
+disp('===========================================================================')
+
+                                            %% Input For Capacticance %%
+C = input('Enter the capacitance values in Farads, [C1...Cn]=');%asking the user to enter values of capacitors 
+while ( length(C)<3 | any(~isreal(C) ) | any(C<=0) | length(C)~=length(R))%checking the conditions
+disp(' The minimum number of capacitors is 3, values should be positive, non-zero, and real.Also, number of capacitors should be equal to number of resistors')%displaying the conditions so the user would know what to enter
+C = input('re-Enter the capacitance values in Farads, [C1...Cn]=');% asking the user to reneter the values if any condition is not satisfied 
+end
+disp('===========================================================================')
+
+                                            %% Input For inductance %%
+L = input('Enter the inductance values in Henry, [L1...Ln-1]=');%asking the user to enter values of inductors
+while ( (length(L)~=length(C)-1) | any(~isreal(L) ) | any(L<=0) )%checking the conditions
+disp('The minimum number of inductors is (# of R) – 1, values should be positive, non-zero, and real')%displaying the conditions so the user would know what to enter
+L = input('re-Enter the inductance values in Henry, [L1...Ln-1]=');% asking the user to reneter the values if any condition is not satisfied 
+end
+disp('===========================================================================')
+
+                                           %% Input Vmag %%
+Vmag = input('Enter the amplitudes of the two voltage sources in volt, Vmag=');%asking the user to enter values of the voltage sources
+while ( length(Vmag)~=2 | any(~isreal(Vmag) ) | any(Vmag<=0) )%checking the conditions
+disp('The number of voltage sources is 2, values should be real, positive, and non-zero')%displaying the conditions so the user would know what to enter
+Vmag = input('re-Enter the amplitudes of the two voltage sources in volt, Vmag=');% asking the user to reneter the values if any condition is not satisfied
+end
+                                            %% Input Vphase %%
+Vphase = input('Enter the phases of the two voltage sources in degree, Vphase=');%asking the user to enter phase values of the voltage sources
+while ( length(Vphase)~=2 | any(~isreal(Vphase) ) )%checking the conditions
+disp('The number of voltage sources is 2, values should be real')%displaying the conditions so the user would know what to enter
+
+Vphase = input('re-Enter the phases of the two voltage sources in degree, Vphase=');% asking the user to reneter the values if any condition is not satisfied
+end
+                                            %% Input Freq %%
+freq = input('Enter the freuency in rad/s, Freq=');%asking the user to enter the value of frequency
+while ( length(freq)~=1 | ~isreal(freq) | freq<=0 )%checking the conditions using a while loop
+disp('Frequency is only one value, value should be real, non-zero, and positive')%displaying the conditions so the user would know what to enter
+freq = input('re-Enter the frequency in rad/s, Freq=');% asking the user to reneter the value if any condition is not satisfied
+end
+disp('===========================================================================')
+
+                                            %% input Alpha %5
+alpha = input('Enter the Alpha (between 0 and 2) to be used with the Successive Relaxation Method=');%asking the user to enter the value of alpha
+while ( length(alpha)~=1 | any(~isreal(alpha) ) | any(alpha<=0 | alpha>=2 ) )%checking the conditions of alpha
+disp('alpha is only one value, value should be real')%displaying the conditions so the user would know what to enter
+alpha = input('re-Enter the Alpha (between 0 and 2) to be used with the Successive Relaxation Method=');% asking the user to reneter the value if any condition is not satisfied
+end
+
+disp('===========================================================================')
+
+
+
+                                         %% The impedance matrix %%
+
+Zc = 1./(i*freq*C);%changing the capacitor values into its frequency domain equivalent to be used for solving
+                   % ( ./ ) to perform the operation on the whole vector not only 1 elem
+ZL = i*freq*L;%changing the inductor values into its frequency domain equivalent to be used for solving
+
+N=length(R);%getting the number of loops we have in the circuit
+Imp=zeros(N,N);%forming the impedance matrix and then editing the needed elements, leaving the rest to be zeroes  
+ 
+for n =2:(N-1)%using a for loop to edit the middle rows since it has the same trend in the middle rows
+Imp(n,n) = ZL(n-1) + R(n) + Zc(n) + ZL(n); %for all diagonal elements it is the sum of all impedances in this loop
+Imp(n,n-1) = -ZL(n-1);%all off diagonal elements are negative values for 
+Imp(n,n+1) = -ZL(n);
+end
+
+Imp(1,1) = R(1) + Zc(1) + ZL(1) ; %editing the first row
+ Imp(1,2) = -ZL(1);%editing the first row
+
+Imp(N,N-1)=-ZL(N-1);%editing the last row
+ Imp(N,N) = ZL(N-1)+R(N)+Zc(N);%editing the last row
+disp('The impedance matrix to solve the mesh current is: ')
+disp(Imp)%displaying the impedence matrix 
+disp('************************************************************')
+
+                                       %% The Voltage Vector %%
+CompVolt = zeros(N,1);%forming the voltage matrix and then editing it, since from our question we only have 2 voltage sources at the beggining and the end 
+CompVolt(1) = Vmag(1) *(cosd(Vphase(1)) + 1j*sind(Vphase(1))); %editing the first element and converting polar to cartesian form
+                                                               %this line converts from polar coordinates to cartesian coordinates
+
+CompVolt(N) = Vmag(2) *(cosd(Vphase(2)) + 1j*sind(Vphase(2)));%editing the last element and converting polar to cartesian form
+                                                               %this line converts from polar coordinates to cartesian coordinates
+disp('The voltage vector to solve the mesh current is: ')
+disp(CompVolt)%displaying the voltage vector 
+disp('************************************************************')
+ 
+for r=1:N%checking the condition for iterative methods of convergence using a for loop for each row 
+if ( (abs(Imp(r,r))) < ((sum(abs(Imp(r,1:N))))-(abs(Imp(r,r))))  ) % checks for convergance for each row
+disp(['The matrix is not strictly diagonally dominant at row ' num2str(r)] )%displaying the rows in which the diagonal element is not dominant at that row 
+end
+end
+
+                      %% Successive Relaxation Method %%               
+
+error = 100000; %a number greater than the error given 
+x=zeros(N,1);%forming our approximated values matrix 
+ while ( error > 0.001)%successive relaxation method 
+xprev =x ;%saving previous to calculate error later on
+for k = 1: N
+s=0;
+for before= 1:(k-1) %asumming all number before the diagonal
+s = s + Imp(k,before)*x(before);
+end
+for after=(k+1):N %asumming all number after the diagonal 
+s = s + Imp(k,after) * x(after);
+end
+x(k) = (1-alpha)*x(k) + ( alpha/Imp(k,k) ) * (CompVolt(k) - s );%calculating the approximated value using the equation of successive relaxation method 
+end
+error = max(abs(x-xprev));%calculating the error to see if it satisfies our given error 
+end
+I=inv(Imp)*CompVolt;%calculating the exact values
+                                        % Approximated and the Exact %
+disp('Approximated,                    Exact=')
+for e=1:N
+fprintf('%.5f%+.5fi                    %.5f%+.5fi\n',real(x(e)),imag(x(e)),real(I(e)),imag(I(e)) )%displaying both approximated and exact values
+end
+disp('************************************************************')
+
+          
+                            %% Relative error and the significan digit %%
+
+disp('Relative error,           Significant Digit=')
+for e=1:N%calculating the relative error and the number of significant digits matching and then displaying both 
+RE = ( abs(x(e)-I(e)) )/ (abs(I(e)));%calculating relative error
+dig=floor(1-log10(2*RE));%calcuating the significant digit
+fprintf('%.7f                   %d\n',RE,dig);
+end
+disp('************************************************************')
+
+                             %% Magnitude and Phase %%
+
+disp('Magnitude     Phase')
+for k=1:N%converting cartesian to polar again and displaying the magnitude and phase 
+mag = abs(x(k));%calculating the magnitude
+phase= 180/pi*angle(x(k));%calculating the phase
+fprintf('%.4f       %6.4f\n',mag,phase)
+end
+disp('************************************************************')
